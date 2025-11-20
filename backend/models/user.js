@@ -21,9 +21,9 @@ const userSchema = new mongoose.Schema({
         required:true
     },
      aadharCardNumber: {
-        type: Number,
-        required: true,
-        unqiue: true
+    type: String,
+    required: true,
+    unique: true // Ensures all Aadhaar numbers are unique in the User collection
     },
     password: {
         type: String,
