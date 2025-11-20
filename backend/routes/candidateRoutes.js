@@ -196,28 +196,19 @@ router.post('/login', async (req, res) => {
 
 
 // POST /vote - Handle voting from mobile app
+// POST /vote - Handle voting from mobile app
 router.post('/vote', jwtAuthMiddleware, async (req, res) => {
     try {
         const { candidateId } = req.body;
-        console.log("User before voting:", user); // Should print a user with id matching your target voter
-
         const userId = req.user.id;
 
-        console.log("Vote POST called. candidateId:", candidateId, "userId:", userId);
-
-        // Find candidate
-        const candidate = await Candidate.findById(candidateId);
-        if (!candidate) {
-            return res.status(404).json({ message: 'Candidate not found' });
-        }
-
-        // Find user
+        // Find user FIRST
         const user = await User.findById(userId);
         if (!user) {
             return res.status(404).json({ message: 'User not found' });
         }
 
-        // Check if admin (admins can't vote)
+        // Check if user is admin
         if (user.role === 'admin') {
             return res.status(403).json({ message: 'Admin is not allowed to vote' });
         }
@@ -227,17 +218,21 @@ router.post('/vote', jwtAuthMiddleware, async (req, res) => {
             return res.status(400).json({ message: 'You have already voted' });
         }
 
+        // Now find candidate
+        const candidate = await Candidate.findById(candidateId);
+        if (!candidate) {
+            return res.status(404).json({ message: 'Candidate not found' });
+        }
+
         // Record the vote in candidate
         candidate.votes.push({ user: userId });
         candidate.voteCount = (candidate.voteCount || 0) + 1;
         await candidate.save();
 
-        // UPDATE USER'S isVoted TO TRUE - THIS IS CRITICAL!
+        // Update user's isVoted status
         user.isVoted = true;
         await user.save();
-        console.log("User after voting:", user); // Should show isVoted: true
 
-        console.log("Vote recorded successfully. User isVoted:", user.isVoted);
         return res.status(200).json({ message: 'Vote recorded successfully' });
 
     } catch (err) {
@@ -245,7 +240,6 @@ router.post('/vote', jwtAuthMiddleware, async (req, res) => {
         return res.status(500).json({ error: 'Internal Server Error' });
     }
 });
-
 
 
 
