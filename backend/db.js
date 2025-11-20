@@ -2,7 +2,7 @@ import mongoose from 'mongoose';
 import dotenv from 'dotenv';
 dotenv.config();
 
-//const mongoURL = process.env.MONGODB_URL_LOCAL;
+//const mongoURL = process.env.MONGODB_LOCAL_URL;
 const mongoURL = process.env.MONGODB_URL_LOCAL;
 
 mongoose.connect(mongoURL);
@@ -13,7 +13,7 @@ db.on('connected', () => {
   console.log('Connected to MongoDB server');
 });
 
-db.on('disconnected', () => {
+db.on('discon nected', () => {
   console.log('MongoDB disconnected');
 });
 

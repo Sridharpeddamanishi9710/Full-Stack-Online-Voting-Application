@@ -150,12 +150,13 @@ router.get('/vote/:candidateID', jwtAuthMiddleware, async (req, res)=>{
 
 
 
-// Get List of all candidates with only name and party fields
+/// Get List of all candidates with name, party, and voteCount
 router.get('/', async (req, res) => {
     try {
-        // Find all candidates and include name, party, and _id (remove '-_id')
-        const candidates = await Candidate.find({}, 'name party _id');
-        // Or simply: const candidates = await Candidate.find(); // includes all fields
+        // Find all candidates and include name, party, _id, and voteCount
+        const candidates = await Candidate.find({}, 'name party _id voteCount');
+        
+        console.log("Candidates fetched:", candidates);
 
         // Return the list of candidates
         res.status(200).json(candidates);
@@ -164,6 +165,7 @@ router.get('/', async (req, res) => {
         res.status(500).json({ error: 'Internal Server Error' });
     }
 });
+
 
 
 // LOGIN ROUTE
@@ -191,6 +193,56 @@ router.post('/login', async (req, res) => {
     }
   });
 });
+
+
+// POST /vote - Handle voting from mobile app
+router.post('/vote', jwtAuthMiddleware, async (req, res) => {
+    try {
+        const { candidateId } = req.body;
+        const userId = req.user.id;
+
+        console.log("Vote POST called. candidateId:", candidateId, "userId:", userId);
+
+        // Find candidate
+        const candidate = await Candidate.findById(candidateId);
+        if (!candidate) {
+            return res.status(404).json({ message: 'Candidate not found' });
+        }
+
+        // Find user
+        const user = await User.findById(userId);
+        if (!user) {
+            return res.status(404).json({ message: 'User not found' });
+        }
+
+        // Check if admin (admins can't vote)
+        if (user.role === 'admin') {
+            return res.status(403).json({ message: 'Admin is not allowed to vote' });
+        }
+
+        // Check if already voted
+        if (user.isVoted) {
+            return res.status(400).json({ message: 'You have already voted' });
+        }
+
+        // Record the vote in candidate
+        candidate.votes.push({ user: userId });
+        candidate.voteCount = (candidate.voteCount || 0) + 1;
+        await candidate.save();
+
+        // UPDATE USER'S isVoted TO TRUE - THIS IS CRITICAL!
+        user.isVoted = true;
+        await user.save();
+
+        console.log("Vote recorded successfully. User isVoted:", user.isVoted);
+        return res.status(200).json({ message: 'Vote recorded successfully' });
+
+    } catch (err) {
+        console.log("Vote error:", err);
+        return res.status(500).json({ error: 'Internal Server Error' });
+    }
+});
+
 
 
 
