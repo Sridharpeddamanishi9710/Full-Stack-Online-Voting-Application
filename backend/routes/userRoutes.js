@@ -36,7 +36,20 @@ router.post('/signup', async (req, res) => {
         // Pass the full user document for JWT (not just an object with id)
         const token = generateToken(response);
 
-        res.status(200).json({ response, token });
+        res.status(200).json({
+    token: token,
+    user: {
+        _id: response._id,
+        name: response.name,
+        role: response.role,
+        aadharCardNumber: response.aadharCardNumber,
+        age: response.age,
+        address: response.address,
+        email: response.email,
+        isVoted: response.isVoted
+    }
+});
+
 
     } catch (err) {
         console.log(err);
@@ -76,6 +89,8 @@ router.post('/login', async (req, res) => {
                 name: user.name,
                 role: user.role,
                 aadharCardNumber: user.aadharCardNumber,
+                age: user.age,
+                address: user.address,
                 email: user.email,
                 isVoted: user.isVoted
             }
